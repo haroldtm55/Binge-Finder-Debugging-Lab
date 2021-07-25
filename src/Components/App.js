@@ -14,27 +14,49 @@ class App extends Component {
     selectedShow: "",
     episodes: [],
     filterByRating: "",
+    page: 1
   }
 
-  componentDidMount = () => {
-    Adapter.getShows().then(shows => this.setState({shows}))
+  componentDidMount () {
+    //Modified
+    window.addEventListener('scroll', this.infiniteScroll)
+    Adapter.getShows(this.state.page).then(shows => this.setState({shows}))
+  }
+  
+  //function created to do new fetch after page reaches the bottom
+  infiniteScroll = () => {
+    if (window.innerHeight + document.documentElement.scrollTop === document.getElementById('root').offsetHeight) {
+      let newPage = this.state.page
+      newPage++
+      this.setState({
+        page: newPage
+      })
+      this.fetchMoreMovies(newPage)
+    }
+  }
+  
+  fetchMoreMovies = (pageNum) => {
+    Adapter.getShows(pageNum).then(shows => this.setState({shows: [...this.state.shows,...shows]}))
   }
 
-  componentDidUpdate = () => {
-    window.scrollTo(0, 0)
+  componentDidUpdate = (prevProps,prevState) => {
+    //Modified
+    if (this.state.selectedShow !== prevState.selectedShow) {
+      window.scrollTo(0, 0)
+    }
   }
 
-  handleSearch (e){
+  handleSearch = (e) => {
     this.setState({ searchTerm: e.target.value.toLowerCase() })
   }
 
   handleFilter = (e) => {
-    e.target.value === "No Filter" ? this.setState({ filterRating:"" }) : this.setState({ filterRating: e.target.value})
+    e.target.value === "No Filter" ? this.setState({ filterByRating:"" }) : this.setState({ filterByRating: e.target.value})
   }
 
   selectShow = (show) => {
     Adapter.getShowEpisodes(show.id)
-    .then((episodes) => this.setState({
+    .then(episodes => this.setState({
       selectedShow: show,
       episodes
     }))
